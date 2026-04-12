@@ -1,6 +1,5 @@
 #include "tictactoe.hpp"
 #include <iostream>
-
 Board::Board() {
     reset();
 }
@@ -42,20 +41,16 @@ bool Board::makeMove(int cell, char player) {
 }
 
 bool Board::checkWin(char player) const {
-
     for (int r = 0; r < 3; r++) {
         if (cells[r*3] == player && cells[r*3+1] == player && cells[r*3+2] == player)
             return true;
     }
-
     for (int c = 0; c < 3; c++) {
         if (cells[c] == player && cells[c+3] == player && cells[c+6] == player)
             return true;
     }
-
     if (cells[0] == player && cells[4] == player && cells[8] == player) return true;
     if (cells[2] == player && cells[4] == player && cells[6] == player) return true;
-
     return false;
 }
 
@@ -68,4 +63,12 @@ bool Board::isFull() const {
 
 char Board::getCell(int index) const {
     return cells[index];
+}
+
+int getComputerMove(const Board& board) {
+    for (int cell = 1; cell <= 9; cell++) {
+        if (!board.isCellTaken(cell))
+            return cell;
+    }
+    return -1;
 }

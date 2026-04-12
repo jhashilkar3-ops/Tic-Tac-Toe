@@ -22,6 +22,8 @@ TEST_CASE("Board resets correctly", "[board]") {
     }
 }
 
+// ── isCellValid ───────────────────────
+
 TEST_CASE("isCellValid returns correct results", "[board]") {
     Board b;
     REQUIRE(b.isCellValid(1)  == true);
@@ -31,12 +33,15 @@ TEST_CASE("isCellValid returns correct results", "[board]") {
     REQUIRE(b.isCellValid(-1) == false);
 }
 
+// ── isCellTaken ───────────────────────
 TEST_CASE("isCellTaken detects taken cells", "[board]") {
     Board b;
     REQUIRE(b.isCellTaken(1) == false);
     b.makeMove(1, 'X');
     REQUIRE(b.isCellTaken(1) == true);
 }
+
+// ── makeMove ───────────────────────────
 
 TEST_CASE("makeMove places marker correctly", "[board]") {
     Board b;
@@ -50,6 +55,15 @@ TEST_CASE("makeMove fails on taken cell", "[board]") {
     REQUIRE(b.makeMove(1, 'O') == false);
     REQUIRE(b.getCell(0) == 'X');
 }
+
+TEST_CASE("makeMove fails on invalid cell", "[board]") {
+    Board b;
+    REQUIRE(b.makeMove(0,  'X') == false);
+    REQUIRE(b.makeMove(10, 'X') == false);
+    REQUIRE(b.makeMove(-1, 'X') == false);
+}
+
+// ── checkWin ──────────────────────
 
 TEST_CASE("checkWin detects row wins", "[board]") {
     Board b;
@@ -81,17 +95,71 @@ TEST_CASE("checkWin returns false when no winner", "[board]") {
     REQUIRE(b.checkWin('O') == false);
 }
 
-TEST_CASE("isFull detects full board", "[board]") {
-    Board b;
-    REQUIRE(b.isFull() == false);
-    b.makeMove(1, 'X'); b.makeMove(2, 'O'); b.makeMove(3, 'X');
-    b.makeMove(4, 'O'); b.makeMove(5, 'X'); b.makeMove(6, 'O');
-    b.makeMove(7, 'O'); b.makeMove(8, 'X'); b.makeMove(9, 'O');
-    REQUIRE(b.isFull() == true);
+// ── isFull ─────────────────────────────────
+
+TEST_CASE("isFull returns false on empty board", "[board]") {
+    REQUIRE(Board().isFull() == false);
 }
 
 TEST_CASE("isFull returns false on partial board", "[board]") {
     Board b;
     b.makeMove(1, 'X');
     REQUIRE(b.isFull() == false);
+}
+
+TEST_CASE("isFull detects full board", "[board]") {
+    Board b;
+    b.makeMove(1, 'X'); b.makeMove(2, 'O'); b.makeMove(3, 'X');
+    b.makeMove(4, 'O'); b.makeMove(5, 'X'); b.makeMove(6, 'O');
+    b.makeMove(7, 'O'); b.makeMove(8, 'X'); b.makeMove(9, 'O');
+    REQUIRE(b.isFull() == true);
+}
+
+// ── getComputerMove ────────────────────────
+
+TEST_CASE("getComputerMove picks cell 1 on empty board", "[computer]") {
+    Board b;
+    REQUIRE(getComputerMove(b) == 1);
+}
+
+TEST_CASE("getComputerMove skips occupied cells", "[computer]") {
+    Board b;
+    b.makeMove(1, 'X');
+    b.makeMove(2, 'O');
+    REQUIRE(getComputerMove(b) == 3);
+}
+
+TEST_CASE("getComputerMove picks last remaining cell", "[computer]") {
+    Board b;
+    for (int i = 1; i <= 8; i++)
+        b.makeMove(i, i % 2 == 0 ? 'O' : 'X');
+    REQUIRE(getComputerMove(b) == 9);
+}
+
+TEST_CASE("getComputerMove returns -1 on full board", "[computer]") {
+    Board b;
+    b.makeMove(1, 'X'); b.makeMove(2, 'O'); b.makeMove(3, 'X');
+    b.makeMove(4, 'O'); b.makeMove(5, 'X'); b.makeMove(6, 'O');
+    b.makeMove(7, 'O'); b.makeMove(8, 'X'); b.makeMove(9, 'O');
+    REQUIRE(getComputerMove(b) == -1);
+}
+
+// ── integration ─────────────────────────────
+
+TEST_CASE("Computer vs computer simulation ends in win or draw", "[integration]") {
+    Board b;
+    char marks[2] = {'X', 'O'};
+    int turn = 0;
+    bool won = false;
+
+    while (!b.isFull()) {
+        char mark = marks[turn % 2];
+        int move = getComputerMove(b);
+        REQUIRE(move >= 1);
+        b.makeMove(move, mark);
+        if (b.checkWin(mark)) { won = true; break; }
+        turn++;
+    }
+
+    REQUIRE((won || b.isFull()));
 }

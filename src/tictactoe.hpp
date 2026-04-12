@@ -17,5 +17,6 @@ private:
     char cells[9];
 };
 
-#endif
+int getComputerMove(const Board& board);
 
+#endif
