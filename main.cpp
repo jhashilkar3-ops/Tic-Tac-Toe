@@ -2,6 +2,8 @@
 #include <sstream>
 #include "src/tictactoe.hpp"
 #include <string>
+#include <cstdlib>
+#include <ctime>
 
 int getHumanMove(Board& board, int currentPlayer, char symbol) {
     std::string input;
@@ -15,9 +17,8 @@ int getHumanMove(Board& board, int currentPlayer, char symbol) {
         }
 
         bool allSpace = true;
-        for (char c : input) {
+        for (char c : input)
             if (!std::isspace(c)) { allSpace = false; break; }
-        }
         if (allSpace) {
             std::cout << "Invalid input! Please enter a whole number between 1 and 9.\n";
             continue;
@@ -68,6 +69,23 @@ int selectMode() {
     }
 }
 
+
+bool askTrapCell() {
+    std::string input;
+    while (true) {
+        std::cout << "\nWould you like to include a trap cell in your game?\n";
+        std::cout << "  1. Yes\n";
+        std::cout << "  2. No\n";
+        std::cout << "What is your selection? ";
+        std::getline(std::cin, input);
+
+        if (input == "1") return true;
+        if (input == "2") return false;
+
+        std::cout << "That is not a valid selection! Try again.\n";
+    }
+}
+
 bool askPlayAgain() {
     std::string input;
     while (true) {
@@ -89,6 +107,8 @@ bool askPlayAgain() {
 }
 
 int main() {
+    std::srand(std::time(nullptr));   // seed RNG once, NOT fixed
+
     std::cout << "================================\n";
     std::cout << "   Welcome to Tic-Tac-Toe!\n";
     std::cout << "================================\n";
@@ -107,7 +127,15 @@ int main() {
         else
             std::cout << "Player 1 = X   |   Player 2 = O\n";
 
-        board.reset();
+        // NEW: ask about trap cell and set up board accordingly
+        bool useTrap = askTrapCell();
+        if (useTrap) {
+            board.resetWithTrap();
+            std::cout << "Great! A trap has been hidden on the board.\n";
+        } else {
+            board.reset();
+        }
+
         board.display();
 
         int turn = 0;
@@ -127,6 +155,14 @@ int main() {
             } else {
                 int humanNum = (mode == 1) ? (turn % 2 + 1) : 1;
                 move = getHumanMove(board, humanNum, symbol);
+            }
+
+
+            if (board.hasTrap() && board.isTrapCell(move)) {
+                std::cout << "Oh no! You set off the trap! " << symbol << " loses their turn.\n";
+                board.display();
+                turn++;
+                continue;
             }
 
             board.makeMove(move, symbol);

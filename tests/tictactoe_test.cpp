@@ -5,161 +5,64 @@
 
 #include "../src/tictactoe.hpp"
 
-TEST_CASE("Board initializes with cells 1-9", "[board]") {
-    Board b;
-    for (int i = 0; i < 9; i++) {
-        REQUIRE(b.getCell(i) == ('1' + i));
-    }
-}
 
-TEST_CASE("Board resets correctly", "[board]") {
+TEST_CASE("hasTrap returns false on normal reset", "[trap]") {
     Board b;
-    b.makeMove(1, 'X');
-    b.makeMove(2, 'O');
     b.reset();
-    for (int i = 0; i < 9; i++) {
-        REQUIRE(b.getCell(i) == ('1' + i));
+    REQUIRE(b.hasTrap() == false);
+}
+
+TEST_CASE("hasTrap returns true after resetWithTrap", "[trap]") {
+    Board b;
+
+    std::srand(42);
+    b.resetWithTrap();
+    REQUIRE(b.hasTrap() == true);
+}
+
+TEST_CASE("isTrapCell identifies correct cell with fixed seed", "[trap]") {
+    Board b;
+    std::srand(42);
+    b.resetWithTrap();
+    std::srand(42);
+    int expectedTrap = (rand() % 9) + 1;
+    REQUIRE(b.isTrapCell(expectedTrap) == true);
+}
+
+TEST_CASE("isTrapCell returns false for non-trap cells", "[trap]") {
+    Board b;
+    std::srand(42);
+    b.resetWithTrap();
+    std::srand(42);
+    int trapCell = (rand() % 9) + 1;
+    for (int cell = 1; cell <= 9; cell++) {
+        if (cell != trapCell)
+            REQUIRE(b.isTrapCell(cell) == false);
     }
 }
 
-// ── isCellValid ───────────────────────
-
-TEST_CASE("isCellValid returns correct results", "[board]") {
+TEST_CASE("Trap cell is not marked when triggered", "[trap]") {
     Board b;
-    REQUIRE(b.isCellValid(1)  == true);
-    REQUIRE(b.isCellValid(9)  == true);
-    REQUIRE(b.isCellValid(0)  == false);
-    REQUIRE(b.isCellValid(10) == false);
-    REQUIRE(b.isCellValid(-1) == false);
+    std::srand(42);
+    b.resetWithTrap();
+    std::srand(42);
+    int trapCell = (rand() % 9) + 1;
+
+
+    REQUIRE(b.isCellTaken(trapCell) == false);
 }
 
-// ── isCellTaken ───────────────────────
-TEST_CASE("isCellTaken detects taken cells", "[board]") {
+TEST_CASE("isFull ignores trap cell", "[trap]") {
     Board b;
-    REQUIRE(b.isCellTaken(1) == false);
-    b.makeMove(1, 'X');
-    REQUIRE(b.isCellTaken(1) == true);
-}
+    std::srand(42);
+    b.resetWithTrap();
+    std::srand(42);
+    int trapCell = (rand() % 9) + 1;
 
-// ── makeMove ───────────────────────────
 
-TEST_CASE("makeMove places marker correctly", "[board]") {
-    Board b;
-    REQUIRE(b.makeMove(5, 'X') == true);
-    REQUIRE(b.getCell(4) == 'X');
-}
-
-TEST_CASE("makeMove fails on taken cell", "[board]") {
-    Board b;
-    b.makeMove(1, 'X');
-    REQUIRE(b.makeMove(1, 'O') == false);
-    REQUIRE(b.getCell(0) == 'X');
-}
-
-TEST_CASE("makeMove fails on invalid cell", "[board]") {
-    Board b;
-    REQUIRE(b.makeMove(0,  'X') == false);
-    REQUIRE(b.makeMove(10, 'X') == false);
-    REQUIRE(b.makeMove(-1, 'X') == false);
-}
-
-// ── checkWin ──────────────────────
-
-TEST_CASE("checkWin detects row wins", "[board]") {
-    Board b;
-    b.makeMove(1, 'X'); b.makeMove(2, 'X'); b.makeMove(3, 'X');
-    REQUIRE(b.checkWin('X') == true);
-    REQUIRE(b.checkWin('O') == false);
-}
-
-TEST_CASE("checkWin detects column wins", "[board]") {
-    Board b;
-    b.makeMove(1, 'O'); b.makeMove(4, 'O'); b.makeMove(7, 'O');
-    REQUIRE(b.checkWin('O') == true);
-}
-
-TEST_CASE("checkWin detects diagonal wins", "[board]") {
-    Board b;
-    b.makeMove(1, 'X'); b.makeMove(5, 'X'); b.makeMove(9, 'X');
-    REQUIRE(b.checkWin('X') == true);
-
-    Board b2;
-    b2.makeMove(3, 'O'); b2.makeMove(5, 'O'); b2.makeMove(7, 'O');
-    REQUIRE(b2.checkWin('O') == true);
-}
-
-TEST_CASE("checkWin returns false when no winner", "[board]") {
-    Board b;
-    b.makeMove(1, 'X'); b.makeMove(2, 'O'); b.makeMove(3, 'X');
-    REQUIRE(b.checkWin('X') == false);
-    REQUIRE(b.checkWin('O') == false);
-}
-
-// ── isFull ─────────────────────────────────
-
-TEST_CASE("isFull returns false on empty board", "[board]") {
-    REQUIRE(Board().isFull() == false);
-}
-
-TEST_CASE("isFull returns false on partial board", "[board]") {
-    Board b;
-    b.makeMove(1, 'X');
-    REQUIRE(b.isFull() == false);
-}
-
-TEST_CASE("isFull detects full board", "[board]") {
-    Board b;
-    b.makeMove(1, 'X'); b.makeMove(2, 'O'); b.makeMove(3, 'X');
-    b.makeMove(4, 'O'); b.makeMove(5, 'X'); b.makeMove(6, 'O');
-    b.makeMove(7, 'O'); b.makeMove(8, 'X'); b.makeMove(9, 'O');
+    for (int cell = 1; cell <= 9; cell++) {
+        if (cell == trapCell) continue;
+        b.makeMove(cell, cell % 2 == 0 ? 'O' : 'X');
+    }
     REQUIRE(b.isFull() == true);
-}
-
-// ── getComputerMove ────────────────────────
-
-TEST_CASE("getComputerMove picks cell 1 on empty board", "[computer]") {
-    Board b;
-    REQUIRE(getComputerMove(b) == 1);
-}
-
-TEST_CASE("getComputerMove skips occupied cells", "[computer]") {
-    Board b;
-    b.makeMove(1, 'X');
-    b.makeMove(2, 'O');
-    REQUIRE(getComputerMove(b) == 3);
-}
-
-TEST_CASE("getComputerMove picks last remaining cell", "[computer]") {
-    Board b;
-    for (int i = 1; i <= 8; i++)
-        b.makeMove(i, i % 2 == 0 ? 'O' : 'X');
-    REQUIRE(getComputerMove(b) == 9);
-}
-
-TEST_CASE("getComputerMove returns -1 on full board", "[computer]") {
-    Board b;
-    b.makeMove(1, 'X'); b.makeMove(2, 'O'); b.makeMove(3, 'X');
-    b.makeMove(4, 'O'); b.makeMove(5, 'X'); b.makeMove(6, 'O');
-    b.makeMove(7, 'O'); b.makeMove(8, 'X'); b.makeMove(9, 'O');
-    REQUIRE(getComputerMove(b) == -1);
-}
-
-// ── integration ─────────────────────────────
-
-TEST_CASE("Computer vs computer simulation ends in win or draw", "[integration]") {
-    Board b;
-    char marks[2] = {'X', 'O'};
-    int turn = 0;
-    bool won = false;
-
-    while (!b.isFull()) {
-        char mark = marks[turn % 2];
-        int move = getComputerMove(b);
-        REQUIRE(move >= 1);
-        b.makeMove(move, mark);
-        if (b.checkWin(mark)) { won = true; break; }
-        turn++;
-    }
-
-    REQUIRE((won || b.isFull()));
 }

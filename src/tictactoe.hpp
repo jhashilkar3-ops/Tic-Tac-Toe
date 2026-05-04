@@ -5,6 +5,7 @@ class Board {
 public:
     Board();
     void reset();
+    void resetWithTrap();
     void display() const;
     bool makeMove(int cell, char player);
     bool isCellValid(int cell) const;
@@ -12,9 +13,12 @@ public:
     bool checkWin(char player) const;
     bool isFull() const;
     char getCell(int index) const;
+    bool isTrapCell(int cell) const;
+    bool hasTrap() const;
 
 private:
     char cells[9];
+    int  trapCell;
 };
 
 int getComputerMove(const Board& board);
